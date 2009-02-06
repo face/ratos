@@ -1,0 +1,117 @@
+#!/usr/bin/ruby
+
+#
+# For examples seel http://myutil.com/2009/2/6/announcing-ratos-a-shell-to-decode-iphone-stack-traces
+#
+#
+# see http://github.com/face/ratos for the latest version
+#
+
+#
+# Copyright (c) 2009, Meme Incorporated All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 
+# * Redistributions of source code must retain the above copyright
+#   notice, this list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in the
+#   documentation and/or other materials provided with the distribution.
+# * Neither the name of Meme Incorporated nor the names of its
+#   contributors may be used to endorse or promote products derived
+#   from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+class Ratos 
+
+  def initialize
+    @usage = "Paste xcode stack trace to stdin, then type 'sim' or 'arm' on a line by itself.\n  Type 'exit' or '^D' to quit and 'app' to print the current app."
+    @prog=File.basename($0, ".rb")
+    @prompt = "\n#{@prog}>"
+
+    if ENV['RATOS_APP_NAME'].nil?
+      @app_name = $0.gsub(/^.*\/([A-Za-z]+)\/bin\/#{@prog}/, '\1')
+    else
+      @app_name = ENV['RATOS_APP_NAME']
+    end
+    if ENV['RATOS_APP_PATH'].nil?
+      @app_path=$0.gsub(/^(.*\/[A-Za-z]+)\/bin\/#{@prog}/, '\1')
+    else
+      @app_path = ENV['RATOS_APP_PATH']
+    end
+
+    @sim_object="#{@app_path}/build/Debug-iphonesimulator/#{@app_name}.app/#{@app_name}"
+    @arm_object="#{@app_path}/build/Debug-iphoneos/#{@app_name}.app/#{@app_name}"
+    @addresses = []
+  end
+
+
+  def process_stdin
+    STDIN.each do |line|
+      exit if line =~ /^exit/ || line =~ /^quit/
+      if line =~ /^sim/
+        print_results
+      elsif line =~ /^arm/
+        print_results('arm')
+      elsif line =~ /^\?/ || line =~ /^usage/ || line =~ /^help/
+        usage
+      elsif line =~ /^app/ 
+        app_info
+        print "#{@prompt}"
+      end
+      next unless line.match(/^[ ]*[0-9]+[,]*$/)
+      address = line.gsub(/^[ ]*([0-9]+)[,]*/, '\1').chomp
+      @addresses << address unless address.nil?
+    end
+    print_results
+  end
+
+  def print_results(type='sim')
+    print "\n"
+
+    if @addresses.size == 0
+      print "Error:  No xcode addresses found in stdin\n"
+      usage
+    else
+      addresses = @addresses.join(' ')
+      if type == 'sim'
+        atos=`/usr/bin/atos -o #{@sim_object} #{addresses}`
+      else
+        atos=`/usr/bin/atos -o #{@arm_object} -arch armv6 #{addresses}`
+      end
+      print "#{atos.gsub(/^[0-9]+\n/, '')}"
+      @addresses = []
+      print "#{@prompt}"
+    end
+  end
+
+  def usage
+    print "\n#{@usage}\n"
+    print "#{@prompt}"
+  end
+
+  def app_info
+    print "\nApp Name:#{@app_name}\n"
+    print "App Path:#{@app_path}\n"
+  end
+end
+
+ratos = Ratos.new
+ratos.app_info
+ratos.usage
+ratos.process_stdin

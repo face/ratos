@@ -1,0 +1,49 @@
+ratos
+===============
+
+ratos is a shell front end to atos written in Ruby for iPhone development.
+Simply cut and past full stack traces to ratos, type 'arm' or 'sim'
+and ratos uses atos to decode the addresses into a nice
+symbolized stack trace.
+
+atos is a tool from apple that converts numeric addresses to symbols 
+of binary images or processes.  atos integrates nicely into 
+xcode for OSX development.   However, when doing iPhone, atos
+can not be tightly integrated into your application is there
+is no /usr/bin/atos on the iPhone.
+
+Usage
+=======
+
+    git clone git://github.com/face/ratos.git  
+    sudo cp ratos/bin/ratos /usr/local/bin/.
+
+
+    # csh
+    setenv RATOS_APP_PATH ~/proj/TheSnapper
+
+    # or bash
+    export RATOS_APP_PATH=~/proj/TheSnapper
+
+    ratos
+
+
+
+If your application name is different than your directory name,
+then you may additionally set RATOS_APP_NAME:
+    # csh
+    setenv RATOS_APP_PATH ~/proj/IttyBooksFree
+    setenv RATOS_APP_NAME IttyBooks
+    # or bash
+    export RATOS_APP_PATH=~/proj/IttyBooksFree
+    export RATOS_APP_NAME=IttyBooks
+
+    ratos
+
+
+For a more complete example and documentation, please see myutil.com[http://myutil.com/2009/2/6/announcing-ratos-a-shell-to-decode-iphone-stack-traces]
+
+==============
+
+Copyright (c) 2008 Meme Inc.
+Released under the BSD license found in the file LICENSE
